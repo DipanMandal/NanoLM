@@ -25,20 +25,29 @@ class MultiHeadSelfAttention(nn.Module):
         key = self.W_k(k).view(batch_size, -1, self.num_heads, self.d_head).transpose(1, 2)
         value = self.W_v(v).view(batch_size, -1, self.num_heads, self.d_head).transpose(1, 2)
 
-        attention_score = F.softmax(nn.matmul(query, key.transpose(-1, -2)) / math.sqrt(self.d_head), dim = -1)
-
+        attention_score = F.softmax(torch.matmul(query, key.transpose(-1, -2)) / math.sqrt(self.d_head), dim = -1)
         if mask is not None:
             attention_score = attention_score.masked_fill(mask == 0, -1e9)
         
         attention_score = self.dropout(attention_score)
-        out = nn.matmul(attention_score, value)
+        out = torch.matmul(attention_score, value)
 
         out = out.transpose(1,2).contiguous().view(batch_size, -1, self.d_model)
         out = self.W_o(out)
 
         return out
 
+if __name__ == "__main__":
+    from model.config import NanoLMConfig
 
+    config = NanoLMConfig()
+    d_model = config.d_model
+    seq_len = config.sequence_length
+
+    vec = torch.randn(2, seq_len, d_model)
+    attn_module = MultiHeadSelfAttention(config)
+    out = attn_module(vec, vec, vec)
+    print(out.shape)
 
 
         
